@@ -53,6 +53,7 @@ For server (backend):
 Frontend
     -Uses Node.js (I installed with v10.2.3)
     -React.js
+    -Used react bootstrap to help with some designing components
 Backend
     -Uses Node.js (I installed with v10.2.3)
     -Express.js

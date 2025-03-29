@@ -15,7 +15,8 @@ const openai = new OpenAI({
 });
 
 app.post('/api/chat', async (req, res) => {
-  const { question } = req.body;
+    let { question } = req.body;
+    let updatedQuestion = question + " Keep your answer less than 3 sentences long."
   if (!question) {
     return res.status(400).json({ error: 'Question is required.' });
   }
@@ -24,7 +25,7 @@ app.post('/api/chat', async (req, res) => {
     // Updated method call
     const completion = await openai.chat.completions.create({
       model: "gpt-4-1106-preview", // Use valid model name
-      messages: [{ role: "user", content: question }],
+      messages: [{ role: "user", content: updatedQuestion }],
       max_tokens: 150,
       temperature: 0.7,
     });
