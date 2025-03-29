@@ -21,18 +21,29 @@ const pool = mysql.createPool({
     queueLimit: QUEUE_LIMIT,
 })
 
+// map columnID to correct column of database
+const columnMap = {
+    0: 'id',    // unused
+    1: 'name',
+    2: 'fat',
+    3: 'cholesterol',
+    4: 'sodium',
+    5: 'carbohydrate',
+    6: 'protein'
+}
+
 // insert entity into database
 export async function insertEntity(name, fat, cholesterol, sodium, carbohydrate, protein) {
     try {
-        // establish query
-        const sql = 'INSERT INTO foods (name, fat, cholesterol, sodium, carbohydrate, protein) VALUES (?, ?, ?, ?, ?, ?)';
+        // establish & execute query
+        const sql = 'INSERT INTO `foods` (`name`, `fat`, `cholesterol`, `sodium`, `carbohydrate`, `protein`) VALUES (?, ?, ?, ?, ?, ?)';
         const values = [name, fat, cholesterol, sodium, carbohydrate, protein];
-        // execute query
-        const [result] = await pool.execute(sql, values);
+        const [result, fields] = await pool.execute(sql, values);
         
-        // TODO: return ID of inserted entity
+        return result.insertId;
     } catch (error) {
         console.error('Error insterting entity:', error);
+        return false;
     }
 }
 
@@ -40,10 +51,26 @@ export async function insertEntity(name, fat, cholesterol, sodium, carbohydrate,
 export async function deleteEntity(id) {
     try {
         // establish & execute query
-        const sql = 'DELETE FROM foods WHERE id = ?';
-        const [result] = await pool.execute(sql, id);
+        const sql = 'DELETE FROM `foods` WHERE `id` = ?';
+        const [result, fields] = await pool.execute(sql, id);
+        return true;
     } catch (error) {
         console.error('Error deleting entity:', error);
+        return false;
+    }
+}
+
+// update value of column for entity in database
+export async function updateEntity(entityID, columnID, newVal) {
+    try {
+        // establish & execute query
+        const sql = 'UPDATE `foods` SET ? = ? WHERE `id` = ? LIMIT 1';
+        const values = [columnMap[columnID], newVal, entityID];
+        const [result, fields] = await pool.execute(sql, values);
+        return true;
+    } catch (error) {
+        console.error('Error updating entity:', error);
+        return false;
     }
 }
 
@@ -51,10 +78,11 @@ export async function deleteEntity(id) {
 export async function getAllEntities() {
     try {
         // establish & execute query
-        const sql = 'SELECT * FROM foods';
-        const [rows] = await pool.execute(sql);
+        const sql = 'SELECT * FROM `foods`';
+        const [rows, fields] = await pool.execute(sql);
         return rows;
     } catch (error) {
         console.error('Error retrieving entities:', error);
+        return null;
     }
 }
