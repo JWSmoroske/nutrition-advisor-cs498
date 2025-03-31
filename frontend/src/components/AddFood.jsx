@@ -16,6 +16,9 @@ const AddFood = () => {
       alert(`Added: ${foodName} - ${calories} calories`);
       setFoodName('');
       setCalories('');
+      // TODO: fetch response from backend using fetch('.../api/add') (look at TestComp.jsx for syntax) & send JSON of all parameters
+      // database expects foods to be inputted as JSON with: 
+      // Name (string), Calories (int), Fats (float), Cholesterol (int), Sodium (int), Carbohydrate (float), Protein (float)
     } else {
       // Handle picture upload
       if (selectedFile) {

@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import OpenAI from 'openai'; // Changed import
-import { insertEntity, updateEntity, deleteEntity, getAllEntities } from 'databaseAccess.js';
+import { insertEntity, updateEntity, deleteEntity, getAllEntities } from './databaseAccess.js';
 
 dotenv.config();
 
@@ -40,6 +40,10 @@ app.post('/api/chat', async (req, res) => {
       details: error.message 
     });
   }
+});
+
+app.post('/api/add', async (req, res) => {
+  // TODO: integrate insertEntity function using parameter values from POST data
 });
 
 const PORT = process.env.PORT || 5000;

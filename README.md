@@ -33,7 +33,7 @@ nutrition-app/
 └── README.md              # Main project documentation
 
 
-SETUP
+# SETUP
 Install Node.js-
         https://www.geeksforgeeks.org/install-node-js-on-windows/
 For client (frontend):
@@ -49,15 +49,16 @@ For server (backend):
     Change the API key value with the actualy value of the OpenAI API key in the .env file
     Run npm start-
         Locally runs the backend on port 5000
-    
-Frontend
-    -Uses Node.js (I installed with v10.2.3)
-    -React.js
-    -Used react bootstrap to help with some designing components
-Backend
-    -Uses Node.js (I installed with v10.2.3)
-    -Express.js
+    Ensure the MySQL server is open under port 3306 & match login information in databaseAccess.js
 
-NOTES
-    - We are using a monorepo structure, an alternative could be separating the parts (frontend, backend, etc.) into microservices and their own repositories.
+Frontend
+ - Uses Node.js (I installed with v10.2.3)
+ - React.js
+ - Used react bootstrap to help with some designing components
+Backend
+ - Uses Node.js (I installed with v10.2.3)
+ - Express.js
+
+# NOTES
+ - We are using a monorepo structure, an alternative could be separating the parts (frontend, backend, etc.) into microservices and their own repositories.
 
