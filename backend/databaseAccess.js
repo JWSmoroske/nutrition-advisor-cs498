@@ -2,10 +2,10 @@ import mysql from 'mysql2/promise';
 
 // define the connection to the mysql server
 const HOST = 'localhost';
-const PORT = 5000;
+const PORT = 3306;
 const USER = 'root';
-const PASSWORD = '';
-const DATABASE = '';
+const PASSWORD = 'Cadmium*Thulium3306';
+const DATABASE = 'nutrition_db';
 const CONNECTION_LIMIT = 5;
 const QUEUE_LIMIT = 0;
 
@@ -25,19 +25,20 @@ const pool = mysql.createPool({
 const columnMap = {
     0: 'id',    // unused
     1: 'name',
-    2: 'fat',
-    3: 'cholesterol',
-    4: 'sodium',
-    5: 'carbohydrate',
-    6: 'protein'
+    2: 'calories',
+    3: 'fat',
+    4: 'cholesterol',
+    5: 'sodium',
+    6: 'carbohydrate',
+    7: 'protein'
 }
 
 // insert entity into database
-export async function insertEntity(name, fat, cholesterol, sodium, carbohydrate, protein) {
+export async function insertEntity(name, calories, fat, cholesterol, sodium, carbohydrate, protein) {
     try {
         // establish & execute query
-        const sql = 'INSERT INTO `foods` (`name`, `fat`, `cholesterol`, `sodium`, `carbohydrate`, `protein`) VALUES (?, ?, ?, ?, ?, ?)';
-        const values = [name, fat, cholesterol, sodium, carbohydrate, protein];
+        const sql = 'INSERT INTO `foods` (`name`, `calories`, `fat`, `cholesterol`, `sodium`, `carbohydrate`, `protein`) VALUES (?, ?, ?, ?, ?, ?, ?)';
+        const values = [name, calories, fat, cholesterol, sodium, carbohydrate, protein];
         const [result, fields] = await pool.execute(sql, values);
         
         return result.insertId;
