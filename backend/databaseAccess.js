@@ -2,7 +2,7 @@ import mysql from 'mysql2/promise';
 
 // define the connection to the mysql server
 const HOST = 'localhost';
-const PORT = 0;
+const PORT = 5000;
 const USER = 'root';
 const PASSWORD = '';
 const DATABASE = '';
