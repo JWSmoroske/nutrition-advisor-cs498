@@ -42,9 +42,100 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-app.post('/api/add', async (req, res) => {
-  // TODO: integrate insertEntity function using parameter values from POST data
-});
+// code added for backend communication with database
+// insert data in for a user
+app.post('/api/add', async(req, res) =>
+  {
+      const { name, calories, fat, cholesterol, sodium, carbohydrate, protein } = req.body;
+  
+      if (!name || !calories || !fat || !cholesterol || !sodium || !carbohydrate || !protein)
+      {
+          res.json({ message: "Missing required parameters to insert data"});
+      }
+  
+      const insertData = await db.insertEntity(name, calories, fat, cholesterol, sodium, carbohydrate, protein);
+      if (insertData)
+      {
+          res.json({ message: "Sucessfully entered data"});
+      }
+      else
+      {
+          res.json({ message: "Failed to enter data"});
+      }
+  });
+
+// delete data associated with a user
+app.delete('/api/delete/:id', async (req, res) =>
+  {
+      const { id } = req.params;
+      
+      const deleteData = await db.deleteEntity(id);
+      if (deleteData)
+      {
+          res.json({ message: "Successfully deleted data associated with id: ", id });
+      }
+      else
+      {
+          res.json({ message: "Failed to delete data associated with id: ", id });
+      }
+  });
+
+// update data for a user with a specified id
+app.put('/api/update/:id', async (req, res) =>
+  {
+      const { id } = req.params;
+      const { columnid, value } = req.body;
+  
+      if (!column|| !value)
+      {
+          res.json({ message: "Missing required parameters to update information"});
+      }
+  
+      const updateInfo = await db.updateEntity(id, columnid, value);
+  
+      if (updateInfo)
+      {
+          res.json({ message: "Successfuly updated data for id: ", id});
+      }
+      else
+      {
+          res.json({ message: "Failed to update data for id: ", id});
+      }
+  });
+
+// retrieve all data in the database
+app.get('/api/retrieve', async (req, res) =>
+  {
+      const getAllData = await db.getAllEntities();
+      if (getAllData)
+      {
+          console.log("Sucessfully retrieved all data from database");
+  
+          // example of calculations with data
+          let calorieTotal = 0;
+          const dailyAverage = 2500;
+          let neededCalories;
+        
+          // loop through all items in database
+          getAllData.forEach(item => 
+          {
+              calorieTotal += item.calories;
+          });
+  
+          neededCalories = calorieTotal - dailyAverage;
+  
+          if (neededCalories < 0)
+          {
+              neededCalories = 0;
+          }
+  
+          res.json(getAllData, calorieTotal, neededCalories); // have a calculation for total calories as well as needed calories
+      }
+      else
+      {
+          res.json({ message: "Failed to retrieve data from the database"});
+      }
+  });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
