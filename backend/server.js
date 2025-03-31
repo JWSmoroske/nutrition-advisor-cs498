@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import OpenAI from 'openai'; // Changed import
+import { insertEntity, updateEntity, deleteEntity, getAllEntities } from 'databaseAccess.js';
 
 dotenv.config();
 
