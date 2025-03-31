@@ -1,7 +1,7 @@
 # nutrition-advisor-cs498
-Nutrition advising web application for CS498 project.
+This project consists of multiple components to create a web application that advises users on their nutrition habits. Users can enter the foods they have eaten, compiled in a database. They can see a summary of what they have eaten, ask for recommendations based on the nutrients they are missing, or request general nutritional advice from an AI assistant. 
 
-Current/Potential Directory Structure:
+<!--Current/Potential Directory Structure:
 nutrition-app/
 ├── frontend/                  # React Frontend
 │   ├── public/
@@ -30,26 +30,26 @@ nutrition-app/
 │   └── schema.sql         # Initial database schema
 │
 ├── .gitignore
-└── README.md              # Main project documentation
+└── README.md              # Main project documentation-->
 
 
 # SETUP
-Install Node.js-
-        https://www.geeksforgeeks.org/install-node-js-on-windows/
+Ensure Node.js is installed - available at the [official site](https://nodejs.org/en/download).
+
 For client (frontend):
-    Run npm install-
+ - Run npm install:
         Installs all the necessary packages to run
-    Run npm start-
+ - Run npm start:
         Locally runs the frontend on port 3000
 
 For server (backend):
-    Run npm install-
+ - Run npm install:
         Installs all the necessary packages to run
-    Create a .env file by doing "cp env.example .env"
-    Change the API key value with the actualy value of the OpenAI API key in the .env file
-    Run npm start-
+ - Create a .env file by doing "cp env.example .env"
+ - Change the API key value with the actualy value of the OpenAI API key in the .env file
+ - Run npm start:
         Locally runs the backend on port 5000
-    Ensure the MySQL server is open under port 3306 & match login information in databaseAccess.js
+ - Ensure the MySQL server is open under port 3306 & match login information in databaseAccess.js
 
 Frontend
  - Uses Node.js (I installed with v10.2.3)

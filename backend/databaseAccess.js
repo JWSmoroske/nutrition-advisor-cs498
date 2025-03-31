@@ -1,6 +1,7 @@
 import mysql from 'mysql2/promise';
 
 // define the connection to the mysql server
+// TOOD: migrate to .env for security
 const HOST = 'localhost';
 const PORT = 3306;
 const USER = 'root';
