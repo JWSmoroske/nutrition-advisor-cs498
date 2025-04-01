@@ -1,6 +1,9 @@
 import React from 'react';
 
 const DailySummary = () => {
+
+  // (.../api/retrieve) API route for retrieval of all database items that the user has input, this output also currently has an attached calorieTotal and neededCalories (based on a daily average) 
+  
   // Mock data for foods eaten today
   const foods = {
     breakfast: [
