@@ -1,11 +1,12 @@
 import mysql from 'mysql2/promise';
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 // define the connection to the mysql server
 // TOOD: migrate to .env for security
 const HOST = 'localhost';
 const PORT = 3306;
-const USER = 'root';
-const PASSWORD = 'Cadmium*Thulium3306';
 const DATABASE = 'nutrition_db';
 const CONNECTION_LIMIT = 5;
 const QUEUE_LIMIT = 0;
@@ -14,8 +15,8 @@ const QUEUE_LIMIT = 0;
 const pool = mysql.createPool({
     host: HOST,
     port: PORT,
-    user: USER,
-    password: PASSWORD,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
     database: DATABASE,
     waitForConnections: true,
     connectionLimit: CONNECTION_LIMIT,
