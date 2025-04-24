@@ -49,7 +49,7 @@ For server (backend):
  - Change the API key value with the actual value of the OpenAI API key in the .env file
  - Run npm start:
         Locally runs the backend on port 5000
- - Ensure the MySQL server is open under port 3306 & match login information in databaseAccess.js. [Note - Basic functionality remains with no DB Server. It allows for information to be saved.]
+ - Ensure the MySQL server is open under port 3306 & match login information in the .evn file. [Note - Basic functionality remains with no DB Server. It allows for information to be saved.]
 
 Frontend
  - Uses Node.js (I installed with v10.2.3)
