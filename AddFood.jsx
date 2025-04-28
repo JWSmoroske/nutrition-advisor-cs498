@@ -1,33 +1,58 @@
-// src/AddFood.jsx
 import React, { useState } from 'react';
+import axios from 'axios';
 
 const AddFood = () => {
-  const [manualEntry, setManualEntry] = useState(true); // Toggle between manual and picture upload
+  const [manualEntry, setManualEntry] = useState(true);
   const [foodName, setFoodName] = useState('');
   const [calories, setCalories] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [message, setMessage] = useState('');
 
-  // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (manualEntry) {
-      // Handle manual entry
-      alert(`Added: ${foodName} - ${calories} calories`);
-      setFoodName('');
-      setCalories('');
+      try {
+        const foodData = {
+          name: foodName,
+          calories: parseInt(calories),
+          fat: 0,             // Default if manual entry doesn't ask
+          cholesterol: 0,
+          sodium: 0,
+          carbohydrate: 0,
+          protein: 0,
+        };
+
+        const response = await axios.post('/api/add', foodData);
+        setMessage(response.data.message || 'Food added successfully');
+        setFoodName('');
+        setCalories('');
+      } catch (error) {
+        console.error(error);
+        setMessage('Error adding food manually.');
+      }
     } else {
-      // Handle picture upload
       if (selectedFile) {
-        alert(`Uploaded: ${selectedFile.name}`);
-        setSelectedFile(null);
+        try {
+          const reader = new FileReader();
+          reader.onloadend = async () => {
+            const base64Image = reader.result.split(',')[1];
+
+            const response = await axios.post('/api/upload', { image: `data:image/jpeg;base64,${base64Image}` });
+            setMessage(response.data.message || 'Image uploaded and parsed successfully');
+            setSelectedFile(null);
+          };
+          reader.readAsDataURL(selectedFile);
+        } catch (error) {
+          console.error(error);
+          setMessage('Error uploading image.');
+        }
       } else {
-        alert('Please select a file to upload.');
+        setMessage('Please select a file to upload.');
       }
     }
   };
 
-  // Handle file selection
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -39,23 +64,15 @@ const AddFood = () => {
     <div className="add-food">
       <h2>Add Food</h2>
 
-      {/* Toggle between manual entry and picture upload */}
       <div className="toggle-buttons">
-        <button
-          onClick={() => setManualEntry(true)}
-          className={manualEntry ? 'active' : ''}
-        >
+        <button onClick={() => setManualEntry(true)} className={manualEntry ? 'active' : ''}>
           Manual Entry
         </button>
-        <button
-          onClick={() => setManualEntry(false)}
-          className={!manualEntry ? 'active' : ''}
-        >
+        <button onClick={() => setManualEntry(false)} className={!manualEntry ? 'active' : ''}>
           Upload Picture
         </button>
       </div>
 
-      {/* Manual Entry Form */}
       {manualEntry && (
         <form onSubmit={handleSubmit}>
           <input
@@ -76,7 +93,6 @@ const AddFood = () => {
         </form>
       )}
 
-      {/* Picture Upload Form */}
       {!manualEntry && (
         <form onSubmit={handleSubmit}>
           <input
@@ -88,6 +104,8 @@ const AddFood = () => {
           <button type="submit">Upload Picture</button>
         </form>
       )}
+
+      {message && <p>{message}</p>}
     </div>
   );
 };
