@@ -3,13 +3,29 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import OpenAI from 'openai'; // Changed import
 import axios from 'axios'; // for image upload from user
+import multer from 'multer';              // Multer middleware for multipart/form-data :contentReference[oaicite:5]{index=5}
+import fs from 'fs';
+import FormData from 'form-data';
 import * as db from './databaseAccess.js'; // import in databaseAccess file to call functions
 
 dotenv.config();
 
+if (!fs.existsSync('images')) fs.mkdirSync('images');
+
+// Disk storage engine: control destination & filename :contentReference[oaicite:6]{index=6}
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'images/'),
+  filename:    (req, file, cb) => {
+    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `${unique}-${file.originalname}`);
+  }
+});
+const upload = multer({ storage });
+
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Modern initialization (v4.x syntax)
 const openai = new OpenAI({
@@ -44,58 +60,60 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // rough outline of code for parsing nutrition facts uploaded by user
-app.post("/api/upload", async (req, res) => 
-  {
-  const uploadImage = req.body.image;
-  if (!uploadImage) 
-  {
-    return res.status(400).json({ success: false, message: "Missing uploaded image data" });
-  }
-
-  try 
-  {
-    // use axios to make a request for the uploaded user nutrition image
-    const response = await axios.post("https://api.ocr.space/parse/image", null,
-    {
-      params: {
-        apikey: "temp", // temp api key, has limited use 
-        base64Image: uploadImage,
-        language: "eng",
-      },
-    });
-
-    const parsedData = response.data.ParsedResults?.[0]?.ParsedText || ""; // parse the text from the uploaded image
-    const data = extractParsedData(parsedData); // call the extractParsedData function to get needed nutrition parameters
-    const { name, calories, fat, cholesterol, sodium, carbohydrate, protein } = data; // set each parameter to information in data
-    
-    // check if the parameters for the INSERT statement is missing
-    if (!name || !calories || !fat || !cholesterol || !sodium || !carbohydrate || !protein) 
-    {
-      return res.status(400).json({ success: false, message: "Missing required parameters to insert data" });
+app.post(
+  '/api/upload',
+  upload.single('imageFile'),             // handle multipart upload :contentReference[oaicite:10]{index=10}
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
 
-    // insert data in directly to the db
-    const insertData = await db.insertEntity(name, calories, fat, cholesterol, sodium, carbohydrate, protein);
-    if (insertData) 
-    {
-      res.json({ success: true, message: "Successfully inserted data into database", data });
-    } 
-    else 
-    {
-      res.status(500).json({ success: false, message: "Failed to insert data into database" });
-    }
+    try {
+      // Convert image to base64 with proper prefix
+      const buffer = fs.readFileSync(req.file.path);
+      const base64Image = `data:${req.file.mimetype};base64,${buffer.toString('base64')}`;
+      
+      // Create form-data for OCR.space
+      const form = new FormData();
+      form.append('base64Image', base64Image);
+      form.append('language', 'eng');
+      form.append('OCREngine', '2');
 
-  } 
-  
-  catch (error) 
-  {
-    res.status(500).json({ success: false, message: "Failed to parse data" });
+      // Send to OCR.space with proper headers
+      const ocr = await axios.post(
+        'https://api.ocr.space/parse/image',
+        form,
+        {
+          headers: {
+            ...form.getHeaders(),
+            apikey: process.env.OCR_SPACE_KEY
+          }
+        }
+      );
+
+      // 4) Extract nutrition facts (your existing function)
+      console.log(ocr.data.ParsedResults[0].ParsedText);
+      const data = extractParsedData(ocr.data.ParsedResults[0].ParsedText);
+      const { name, calories, fat, cholesterol, sodium, carbohydrate, protein } = data;
+
+      if (![name, calories, fat, cholesterol, sodium, carbohydrate, protein].every(v => v != null)) {
+        return res.status(400).json({ success: false, message: 'Incomplete nutrition data' });
+      }
+
+      // 5) Insert into DB
+      //const inserted = await db.insertEntity(name, calories, fat, cholesterol, sodium, carbohydrate, protein);
+      //if (!inserted) throw new Error('DB insert failed');
+      console.log(data);
+      res.json({ success: true, data });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: err.message });
+    }
   }
-});
+);
 
 // function to extract the needed nutrition parameters from the parsed data
-function extractParsedData(parsedData)
-{
+function extractParsedData(parsedText) {
   const nutritionData = {
     name: "",
     calories: "",
@@ -106,25 +124,53 @@ function extractParsedData(parsedData)
     protein: ""
   };
 
-  // use regex to parse through the data to get corresponding nutritional information
+  // Improved patterns with better line handling and value capture
   const patterns = [
-    { key: "name", pattern: /(?:Name):\s*(.*?)(?=\n|$)/i }, // difficult to extract name as it won't be on the nutrition label
-    { key: "calories", pattern: /(?:Calories):\s*(\d+)/i },
-    { key: "fat", pattern: /(?:Total Fat):\s*(\d+(\.\d+)?)\s*g/i },
-    { key: "cholesterol", pattern: /(?:Cholesterol):\s*(\d+)\s*mg/i },
-    { key: "sodium", pattern: /(?:Sodium):\s*(\d+)\s*mg/i },
-    { key: "carbohydrate", pattern: /(?:Total Carbohydrate):\s*(\d+)\s*g/i },
-    { key: "protein", pattern: /(?:Protein):\s*(\d+)\s*g/i }
+    { 
+      key: "calories",
+      // Matches "Calories" at start of line followed by number
+      pattern: /^\s*Calories\s+(\d+)/im 
+    },
+    { 
+      key: "fat",
+      // Handles optional "Total" and different spacing
+      pattern: /^\s*(?:Total\s+)?Fat\s+(\d+(?:\.\d+)?)\s*g/im 
+    },
+    { 
+      key: "cholesterol",
+      // Matches cholesterol value with mg
+      pattern: /^\s*Cholesterol\s+(\d+)\s*mg/im 
+    },
+    { 
+      key: "sodium",
+      // Captures sodium value
+      pattern: /^\s*Sodium\s+(\d+)\s*mg/im 
+    },
+    { 
+      key: "carbohydrate",
+      // Handles "Total Carbohydrate" or "Carbohydrate"
+      pattern: /^\s*(?:Total\s+)?Carbohydrate\s+(\d+)\s*g/im 
+    },
+    { 
+      key: "protein",
+      // Simple protein match
+      pattern: /^\s*Protein\s+(\d+)\s*g/im 
+    }
   ];
 
-  // loop through the pattern and match it to each key
-  patterns.forEach(({ key, pattern }) => 
-  {
-    const match = parsedText.match(pattern);
-    if (match) 
-    {
-      nutritionData[key] = match[1];  // set the matched data to the corresponding key
-    }
+  // Split text into lines and process each line individually
+  parsedText.split('\n').forEach(line => {
+    const trimmedLine = line.trim();
+    
+    patterns.forEach(({ key, pattern }) => {
+      const match = trimmedLine.match(pattern);
+      if (match) {
+        // Only update if not already found
+        if (!nutritionData[key]) {
+          nutritionData[key] = match[1];
+        }
+      }
+    });
   });
 
   return nutritionData;

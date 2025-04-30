@@ -1,99 +1,106 @@
 // src/AddFood.jsx
-import React, { useState } from 'react';
 
-const AddFood = () => {
-  const [manualEntry, setManualEntry] = useState(true); // Toggle between manual and picture upload
-  const [foodName, setFoodName] = useState('');
-  const [calories, setCalories] = useState('');
+import React, { useState } from "react";
+import axios from "axios";
+
+export default function AddFood() {
+  const [manualEntry, setManualEntry]   = useState(true);
+  const [foodName, setFoodName]         = useState("");     // initialized to "" (never undefined) :contentReference[oaicite:2]{index=2}
+  const [calories, setCalories]         = useState("");     // string, never undefined :contentReference[oaicite:3]{index=3}
   const [selectedFile, setSelectedFile] = useState(null);
+  const [parsedData, setParsedData]     = useState(null);
 
-  // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
 
     if (manualEntry) {
-      // Handle manual entry
       alert(`Added: ${foodName} - ${calories} calories`);
-      setFoodName('');
-      setCalories('');
-      // TODO: fetch response from backend using fetch('.../api/add') (look at TestComp.jsx for syntax) & send JSON of all parameters
-      // database expects foods to be inputted as JSON with: 
-      // Name (string), Calories (int), Fats (float), Cholesterol (int), Sodium (int), Carbohydrate (float), Protein (float)
-      // other fetches are ('.../api/delete/:id'), (.../api/update/:id) for eventual delete and update functionalities
+      setFoodName("");
+      setCalories("");
     } else {
-      // Handle picture upload
-      if (selectedFile) {
-        alert(`Uploaded: ${selectedFile.name}`);
-        setSelectedFile(null);
-      } else {
-        alert('Please select a file to upload.');
-      }
-    }
-  };
+      if (!selectedFile) return alert("Please select a file.");
+      try {
+        // Build FormData with the raw file :contentReference[oaicite:2]{index=2}
+        const formData = new FormData();
+        formData.append("imageFile", selectedFile);               // field name "imageFile" :contentReference[oaicite:3]{index=3}
+        
+        // POST multipart/form-data to our new endpoint
+        const resp = await axios.post(
+          "http://localhost:5000/api/upload",
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }    // Axios infers boundary :contentReference[oaicite:4]{index=4}
+        );
 
-  // Handle file selection
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
+        if (resp.data.success) {
+          setParsedData(resp.data.data);
+        } else {
+          alert("Upload failed: " + resp.data.message);
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Error uploading image.");
+      } finally {
+        setSelectedFile(null);
+      }
     }
   };
 
   return (
     <div className="add-food">
       <h2>Add Food</h2>
-
-      {/* Toggle between manual entry and picture upload */}
       <div className="toggle-buttons">
-        <button
-          onClick={() => setManualEntry(true)}
-          className={manualEntry ? 'active' : ''}
-        >
-          Manual Entry
-        </button>
-        <button
-          onClick={() => setManualEntry(false)}
-          className={!manualEntry ? 'active' : ''}
-        >
-          Upload Picture
-        </button>
+        <button onClick={() => setManualEntry(true)}  className={manualEntry ? "active" : ""}>Manual Entry</button>
+        <button onClick={() => setManualEntry(false)} className={!manualEntry ? "active" : ""}>Upload Picture</button>
       </div>
 
-      {/* Manual Entry Form */}
-      {manualEntry && (
+      {manualEntry ? (
         <form onSubmit={handleSubmit}>
           <input
             type="text"
             placeholder="Food Name"
-            value={foodName}
-            onChange={(e) => setFoodName(e.target.value)}
+            value={foodName || ""}                         // fallback ensures a string :contentReference[oaicite:4]{index=4}
+            onChange={e => setFoodName(e.target.value)}
             required
           />
           <input
             type="number"
             placeholder="Calories"
-            value={calories}
-            onChange={(e) => setCalories(e.target.value)}
+            value={calories || ""}                         // fallback ensures a string :contentReference[oaicite:5]{index=5}
+            onChange={e => setCalories(e.target.value)}
             required
           />
           <button type="submit">Add Food</button>
         </form>
-      )}
-
-      {/* Picture Upload Form */}
-      {!manualEntry && (
+      ) : (
         <form onSubmit={handleSubmit}>
           <input
             type="file"
             accept="image/*"
-            onChange={handleFileChange}
-            required
+            onChange={e => setSelectedFile(e.target.files[0])}  // uncontrolled file input :contentReference[oaicite:6]{index=6}
+              required
+              style={{color: 'black'}}
           />
           <button type="submit">Upload Picture</button>
         </form>
       )}
+
+      {/* Conditionally render parsed nutrition facts */}
+      {parsedData && (
+        <div className="nutrition-results">
+          <h3>Parsed Nutrition Facts</h3>
+          <table>
+            <tbody>
+              <tr><td>Name</td><td>{parsedData.name}</td></tr>
+              <tr><td>Calories</td><td>{parsedData.calories}</td></tr>
+              <tr><td>Fat (g)</td><td>{parsedData.fat}</td></tr>
+              <tr><td>Cholesterol (mg)</td><td>{parsedData.cholesterol}</td></tr>
+              <tr><td>Sodium (mg)</td><td>{parsedData.sodium}</td></tr>
+              <tr><td>Carbs (g)</td><td>{parsedData.carbohydrate}</td></tr>
+              <tr><td>Protein (g)</td><td>{parsedData.protein}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
-};
-
-export default AddFood;
+}
